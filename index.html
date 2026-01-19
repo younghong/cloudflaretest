@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 프로필 사진 생성기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ffffff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .upload-box {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23374151FF' stroke-width='2' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            border-radius: 12px;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">AI 프로필 사진 생성기</h1>
+            <p class="text-gray-400 mt-2">사진 한 장으로 세상에 하나뿐인 프로필 사진을 만들어보세요.</p>
+        </header>
+
+        <main class="bg-gray-800 p-6 md:p-8 rounded-2xl shadow-2xl">
+            <!-- Image Upload Section -->
+            <div id="upload-section">
+                <label for="image-upload" class="cursor-pointer">
+                    <div id="upload-box" class="upload-box w-full h-64 flex flex-col items-center justify-center text-center transition-all duration-300 hover:bg-gray-700/50">
+                        <img id="image-preview" src="" alt="Image preview" class="hidden w-full h-full object-cover rounded-lg"/>
+                        <div id="upload-placeholder" class="flex flex-col items-center justify-center">
+                            <svg class="w-12 h-12 text-gray-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                            </svg>
+                            <p class="font-semibold text-gray-300">여기를 클릭하여 사진 업로드</p>
+                            <p class="text-xs text-gray-500 mt-1">PNG, JPG, WEBP 파일 지원</p>
+                        </div>
+                    </div>
+                </label>
+                <input type="file" id="image-upload" class="hidden" accept="image/png, image/jpeg, image/webp">
+
+                <div class="mt-6">
+                    <label for="style-select" class="block text-sm font-medium text-gray-300 mb-2">어떤 스타일을 원하시나요?</label>
+                    <select id="style-select" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                        <option value="Official passport photo. Pure white background. Remove glasses naturally. Strictly maintain original eye shape, facial features, and face proportions. Realistic human skin texture. Neutral expression, centered composition, high-end studio lighting. No excessive beauty filters.">여권 사진 (흰색 배경 / 안경 제거 / 원본 유지)</option>
+                        <option value="A formal ID photo, passport style, solid light blue or grey background, minimal retouching, preserving original identity, neat business attire, soft studio lighting.">증명사진 (컬러 배경 / 정장)</option>
+                        <option value="A professional headshot for a social media profile, corporate linkedin photo, friendly and approachable, realistic features.">비즈니스 프로필 (링크드인)</option>
+                        <option value="A dramatic, cinematic portrait with high contrast lighting, looking like a movie poster.">영화 포스터 스타일 (시네마틱)</option>
+                        <option value="A fantasy character portrait, elven or magical, with glowing elements.">판타지 캐릭터</option>
+                        <option value="A futuristic cyberpunk-style portrait with neon lights and high-tech gear.">사이버펑크 스타일</option>
+                        <option value="A hand-drawn sketch or painted style portrait, artistic and elegant.">손그림 / 회화 스타일</option>
+                    </select>
+                </div>
+
+
+                <button id="generate-btn" class="mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    프로필 사진 생성
+                </button>
+            </div>
+
+            <!-- Result Section -->
+            <div id="result-section" class="hidden text-center">
+                <div id="loading-indicator" class="flex flex-col items-center justify-center h-64">
+                    <div class="spinner"></div>
+                    <p class="mt-4 text-gray-400">AI가 안경을 제거하고 배경을 정리하고 있어요... <br>잠시만 기다려주세요.</p>
+                </div>
+                <div id="result-image-container" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4">✨ 완성! ✨</h2>
+                    <img id="result-image" src="" alt="Generated AI profile picture" class="w-full max-w-md mx-auto rounded-lg shadow-xl fade-in">
+                    <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+                        <a id="download-btn" href="#" download="ai_id_photo.png" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300">
+                            다운로드
+                        </a>
+                        <button id="retry-btn" class="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300">
+                            다시 만들기
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="error-message" class="hidden mt-4 text-center bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
+                <p>이미지 생성에 실패했습니다. 다른 이미지를 사용하거나 잠시 후 다시 시도해 주세요.</p>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreview = document.getElementById('image-preview');
+        const uploadPlaceholder = document.getElementById('upload-placeholder');
+        const generateBtn = document.getElementById('generate-btn');
+        const styleSelect = document.getElementById('style-select');
+
+        const uploadSection = document.getElementById('upload-section');
+        const resultSection = document.getElementById('result-section');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const resultImageContainer = document.getElementById('result-image-container');
+        const resultImage = document.getElementById('result-image');
+        const downloadBtn = document.getElementById('download-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const errorMessage = document.getElementById('error-message');
+
+        let uploadedFile = null;
+        let base64ImageData = null;
+
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target.result;
+                    imagePreview.src = dataUrl;
+                    imagePreview.classList.remove('hidden');
+                    uploadPlaceholder.classList.add('hidden');
+                    generateBtn.disabled = false;
+                    
+                    base64ImageData = dataUrl.split(',')[1];
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        generateBtn.addEventListener('click', () => {
+            if (!base64ImageData) {
+                alert("먼저 이미지를 업로드해주세요.");
+                return;
+            }
+            generateImage();
+        });
+
+        retryBtn.addEventListener('click', () => {
+            resultSection.classList.add('hidden');
+            resultImageContainer.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            resultImage.src = '';
+        });
+
+        async function generateImage() {
+            uploadSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            loadingIndicator.classList.remove('hidden');
+            resultImageContainer.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            generateBtn.disabled = true;
+
+            const userPrompt = styleSelect.value;
+            
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: userPrompt },
+                        {
+                            inlineData: {
+                                mimeType: uploadedFile.type,
+                                data: base64ImageData
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ['IMAGE']
+                },
+            };
+            
+            try {
+                const imageUrl = await callGenerativeApi(payload);
+                displayResult(imageUrl);
+            } catch (error) {
+                console.error('API Error:', error);
+                showError();
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                generateBtn.disabled = false;
+            }
+        }
+
+        async function callGenerativeApi(payload, retries = 5, delay = 1000) {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                    
+                    if (!base64Data) {
+                        throw new Error("API response did not contain image data.");
+                    }
+                    
+                    return `data:image/png;base64,${base64Data}`;
+
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i))); 
+                }
+            }
+        }
+
+        function displayResult(imageUrl) {
+            resultImage.src = imageUrl;
+            downloadBtn.href = imageUrl;
+            resultImageContainer.classList.remove('hidden');
+        }
+
+        function showError() {
+            errorMessage.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>
